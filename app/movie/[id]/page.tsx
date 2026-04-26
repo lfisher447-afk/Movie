@@ -1,8 +1,6 @@
 'use client';
 import { useEffect, useState, useRef } from 'react';
 import { Play, Users, Calendar, Star, Clapperboard, Layers } from 'lucide-react';
-import { db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
 import { useSearchParams } from 'next/navigation';
 import { Comments } from '@/components/Comments';
 import { WatchPartyOverview } from '@/components/WatchPartyOverview';
