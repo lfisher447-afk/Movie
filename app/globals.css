@@ -1,168 +1,64 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 
-  OMNIMUX 10X CORE ARCHITECTURE
-  Focus: Cinematic Immersion & Hardware-Accelerated UI
-*/
 :root {
   --brand: #E50914;
-  --brand-rgb: 229, 9, 20;
-  --brand-hover: #f40a15;
-  --surface: #070709;
-  --surface-light: #101218;
-  --surface-lighter: #1A1D24;
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --surface: #050507;
+  --nexus-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
-  * {
-    @apply border-white/5;
-  }
-
-  html {
-    @apply scroll-smooth antialiased;
-    scrollbar-gutter: stable;
-  }
-
   body {
-    @apply bg-surface text-white font-sans selection:bg-brand/30 selection:text-white;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    text-rendering: optimizeLegibility;
-    overflow-x: hidden;
-  }
-
-  /* FIXED: Circular dependency resolved by using the theme() function directly */
-  h1, h2, h3, h4, .display-text {
-    font-family: 'Bebas Neue', sans-serif;
-    @apply tracking-tight uppercase;
-  }
-
-  /* Cinematic Film Grain Overlay */
-  body::before {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
-    opacity: 0.04;
-    pointer-events: none;
-    z-index: 9999;
-    filter: contrast(150%) brightness(100%);
+    @apply bg-surface text-white font-sans selection:bg-brand/30 antialiased overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 50% 0%, rgba(229, 9, 20, 0.08) 0px, transparent 50%),
+      url("https://grainy-gradients.vercel.app/noise.svg");
+    background-attachment: fixed;
   }
 }
 
 @layer components {
-  /* THE NEXUS GLASSMORHPISM V2 */
-  .glass-card {
-    @apply relative overflow-hidden bg-surface-light/40 backdrop-blur-3xl border border-white/10 rounded-3xl;
-    box-shadow: 
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-      0 20px 50px -12px rgba(0, 0, 0, 0.5);
+  /* Nexus-Grade Interactive Elements */
+  .font-cinema {
+    font-family: 'Bebas Neue', sans-serif;
+    @apply uppercase tracking-tighter leading-none;
   }
 
-  /* NEON GLOW EFFECTS */
-  .brand-glow {
-    box-shadow: 0 0 40px -10px rgba(var(--brand-rgb), 0.5);
+  .glass-panel {
+    @apply bg-surface-card/60 backdrop-blur-3xl border border-surface-border rounded-3xl;
+    transition: all 600ms var(--nexus-ease);
   }
 
-  /* OPTIMIZED BUTTONS */
   .btn-nexus {
-    @apply relative flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all duration-500 will-change-transform;
-    @apply hover:scale-[1.02] active:scale-[0.98];
+    @apply relative px-8 py-4 rounded-2xl font-bold transition-all duration-500 overflow-hidden flex items-center justify-center gap-2;
+    transition-timing-function: var(--nexus-ease);
   }
 
-  .btn-primary {
-    @apply btn-nexus bg-brand text-white brand-glow overflow-hidden;
-  }
+  .btn-nexus:hover { transform: translateY(-2px); }
+  .btn-nexus:active { transform: translateY(0) scale(0.96); }
 
-  .btn-primary::after {
-    content: "";
-    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full;
-    transition: transform 0.6s var(--ease-expo);
+  /* Advanced Hardware-Accelerated Shimmer */
+  .nexus-skeleton {
+    @apply relative overflow-hidden bg-surface-accent rounded-2xl;
   }
-
-  .btn-primary:hover::after {
-    @apply translate-x-full;
-  }
-
-  /* CINEMATIC TEXTURE */
-  .text-metal {
-    @apply bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/20;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-  }
-}
-
-@layer utilities {
-  /* HARDWARE ACCELERATED ANIMATIONS */
-  .animate-shimmer {
-    background: linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.03) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
-    background-size: 200% 100%;
+  .nexus-skeleton::after {
+    content: ""; @apply absolute inset-0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
     animation: shimmer 2s infinite linear;
   }
-
-  /* 10X SCROLLBAR */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: var(--brand) transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar {
-    @apply w-1.5 h-1.5;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full border-2 border-transparent bg-clip-content;
-    @apply hover:bg-brand transition-colors;
-  }
-
-  /* MESH GRADIENT BACKGROUNDS */
-  .bg-mesh {
-    background-color: var(--surface);
-    background-image: 
-      radial-gradient(at 0% 0%, rgba(var(--brand-rgb), 0.15) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
-  }
-
-  /* LINE CLAMP FIX FOR MOVIE OVERVIEWS */
-  .clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
 }
 
-/* KEYFRAMES */
 @keyframes shimmer {
-  from { background-position: 200% 0; }
-  to { background-position: -200% 0; }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
 
-/* 10X MOVIE CARD INTERACTION */
-.movie-card-focus {
-  @apply transition-all duration-700 var(--ease-expo);
-}
-
-.movie-card-focus:hover {
-  @apply -translate-y-3 z-30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)];
-}
-
-/* NPROGRESS OVERRIDE */
 #nprogress .bar {
-  background: var(--brand) !important;
-  height: 3px !important;
-  box-shadow: 0 0 15px var(--brand);
-  }
+  @apply bg-brand !important;
+  box-shadow: 0 0 20px var(--brand);
+  height: 4px !important;
+}
+
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-white/10 rounded-full hover:bg-brand transition-colors; }
