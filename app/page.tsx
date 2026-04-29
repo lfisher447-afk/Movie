@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { fetchTMDB } from '@/lib/tmdb';
 import { MovieCard } from '@/components/MovieCard';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { MovieCardSkeleton } from '@/components/Skeleton';
@@ -9,19 +8,19 @@ import { ChevronRight } from 'lucide-react';
 
 export default function Home() {
   const [trending, setTrending] = useState<any[]>([]);
-  const[netflixScrape, setNetflixScrape] = useState<any[]>([]);
-  const [topRated, setTopRated] = useState<any[]>([]);
+  const [netflixScrape, setNetflixScrape] = useState<any[]>([]);
+  const[topRated, setTopRated] = useState<any[]>([]);
   const { watchlist, history } = useStore();
 
   useEffect(() => {
-    fetchTMDB('/trending/movie/week').then(d => setTrending(d.results ||[]));
-    fetchTMDB('/discover/movie', { with_networks: '213' }).then(d => setNetflixScrape(d.results ||[])); // Netflix Network id 213 check
-    fetchTMDB('/movie/top_rated').then(d => setTopRated(d.results || []));
+    // FIXED: Now safely uses the Next.js backend proxy instead of calling TMDB directly on the client.
+    fetch('/api/tmdb?endpoint=/trending/movie/week').then(r => r.json()).then(d => setTrending(d.results ||[]));
+    fetch('/api/tmdb?endpoint=/discover/movie&with_networks=213').then(r => r.json()).then(d => setNetflixScrape(d.results ||[]));
+    fetch('/api/tmdb?endpoint=/movie/top_rated').then(r => r.json()).then(d => setTopRated(d.results || []));
   },[]);
 
   return (
     <div className="bg-surface pb-32">
-       {/* New Advanced Extracted Component */}
        <HeroCarousel movies={trending} />
 
        <div className="max-w-[1800px] mx-auto px-6 md:px-12 -mt-32 relative z-20 space-y-20 flex flex-col">
