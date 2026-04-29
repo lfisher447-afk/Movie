@@ -4,16 +4,18 @@ import { MovieCard } from '@/components/MovieCard';
 import { HeroCarousel } from '@/components/HeroCarousel';
 import { MovieCardSkeleton } from '@/components/Skeleton';
 import { useStore } from '@/store/useStore';
+import { useMounted } from '@/hooks/useMounted';
 import { ChevronRight } from 'lucide-react';
 
 export default function Home() {
-  const [trending, setTrending] = useState<any[]>([]);
+  const[trending, setTrending] = useState<any[]>([]);
   const [netflixScrape, setNetflixScrape] = useState<any[]>([]);
-  const[topRated, setTopRated] = useState<any[]>([]);
+  const [topRated, setTopRated] = useState<any[]>([]);
+  
   const { watchlist, history } = useStore();
+  const isMounted = useMounted(); // Safe Hydration Integration
 
   useEffect(() => {
-    // FIXED: Now safely uses the Next.js backend proxy instead of calling TMDB directly on the client.
     fetch('/api/tmdb?endpoint=/trending/movie/week').then(r => r.json()).then(d => setTrending(d.results ||[]));
     fetch('/api/tmdb?endpoint=/discover/movie&with_networks=213').then(r => r.json()).then(d => setNetflixScrape(d.results ||[]));
     fetch('/api/tmdb?endpoint=/movie/top_rated').then(r => r.json()).then(d => setTopRated(d.results || []));
@@ -24,19 +26,20 @@ export default function Home() {
        <HeroCarousel movies={trending} />
 
        <div className="max-w-[1800px] mx-auto px-6 md:px-12 -mt-32 relative z-20 space-y-20 flex flex-col">
-         {history.length > 0 && <MovieRow title="Continue Watching" movies={history} isSpecial />}
-         {watchlist.length > 0 && <MovieRow title="Your Watchlist Vault" movies={watchlist} />}
+         {/* Only renders user-specific local storage states once the window object is mounted safely */}
+         {isMounted && history.length > 0 && <MovieRow title="Continue Watching" movies={history} isSpecial />}
+         {isMounted && watchlist.length > 0 && <MovieRow title="Your Watchlist Vault" movies={watchlist} />}
          
-         <MovieRow title="Trending Universally" movies={trending.slice(5)} loading={trending.length===0} />
-         <MovieRow title="Award-Winning Epics" movies={topRated} loading={topRated.length===0} />
-         <MovieRow title="Action Packed" movies={netflixScrape} loading={netflixScrape.length===0} />
+         <MovieRow title="Trending Universally" movies={trending.slice(5)} loading={trending.length === 0} />
+         <MovieRow title="Award-Winning Epics" movies={topRated} loading={topRated.length === 0} />
+         <MovieRow title="Action Packed" movies={netflixScrape} loading={netflixScrape.length === 0} />
        </div>
     </div>
   );
 }
 
 function MovieRow({ title, movies, isSpecial=false, loading=false }: { title: string, movies: any[], isSpecial?: boolean, loading?: boolean }) {
-    if(!loading && !movies.length) return null;
+    if (!loading && !movies.length) return null;
     return (
         <div className="w-full relative group/row">
             <div className="flex items-center justify-between mb-6">
