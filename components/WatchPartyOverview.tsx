@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Users, Copy, Check } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -20,17 +20,22 @@ export function WatchPartyOverview({ roomCode, videoRef, isHostRef }: { roomCode
                 return;
             }
             
-            // Guest sync logic (ONLY works perfectly with raw video element, embeds use proxy postMessage)
-            if (!isHostRef.current && videoRef.current && 'currentTime' in videoRef.current) {
-                const data = snap.data();
-                const video = videoRef.current as HTMLVideoElement;
-                const expected = data.playing ? data.time + (Date.now() - data.ts) / 1000 : data.time;
-                
-                if (Math.abs(video.currentTime - expected) > 2) {
-                    video.currentTime = expected;
+            try {
+                // Safely attempting to sync. If it's an Iframe, reading `currentTime` throws a DOM CORS exception.
+                const el = videoRef.current as HTMLVideoElement;
+                if (!isHostRef.current && el && el.nodeName === 'VIDEO' && 'currentTime' in el) {
+                    const data = snap.data();
+                    const expected = data.playing ? data.time + (Date.now() - data.ts) / 1000 : data.time;
+                    
+                    if (Math.abs(el.currentTime - expected) > 2) {
+                        el.currentTime = expected;
+                    }
+                    if (data.playing && el.paused) el.play().catch(()=>{});
+                    if (!data.playing && !el.paused) el.pause();
                 }
-                if (data.playing && video.paused) video.play().catch(()=>{});
-                if (!data.playing && !video.paused) video.pause();
+            } catch (error) {
+                // Silently bypass cross-origin iframe security blocks. 
+                // In production architectures, Embed iframes require postMessage bridges.
             }
         });
         return () => unsub();
@@ -47,9 +52,9 @@ export function WatchPartyOverview({ roomCode, videoRef, isHostRef }: { roomCode
     return (
         <div className="absolute top-4 left-4 z-50 flex gap-2 items-center">
             <div className="bg-brand px-3 py-1.5 rounded-lg font-bold text-xs uppercase shadow-[0_0_15px_rgba(229,9,20,0.6)] flex items-center gap-2 border border-red-400">
-                <Users className="w-4 h-4"/> Live Setup: {roomCode} {isHostRef.current ? "(Host)" : "(Guest)"}
+                <Users className="w-4 h-4"/> Live Room: {roomCode} {isHostRef.current ? "(Host)" : "(Guest)"}
             </div>
-            <button onClick={copyLink} className="bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg border border-white/20 text-xs font-bold hover:bg-white/20 transition flex items-center gap-2">
+            <button onClick={copyLink} className="bg-black/60 backdrop-blur px-3 py-1.5 rounded-lg border border-white/20 text-xs font-bold hover:bg-white/20 transition flex items-center gap-2 text-white">
                 {copied ? <Check className="w-4 h-4 text-green-400"/> : <Copy className="w-4 h-4"/>} 
                 {copied ? 'Copied Link' : 'Invite'}
             </button>
