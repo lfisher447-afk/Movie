@@ -1,20 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* 
-  OMNIMUX DESIGN SYSTEM VARIABLES 
-  DEDICATED 10X ARCHITECTURE
+  OMNIMUX 10X CORE ARCHITECTURE
+  Focus: Cinematic Immersion & Hardware-Accelerated UI
 */
 :root {
   --brand: #E50914;
+  --brand-rgb: 229, 9, 20;
   --brand-hover: #f40a15;
-  --brand-glow: rgba(229, 9, 20, 0.4);
   --surface: #070709;
   --surface-light: #101218;
   --surface-lighter: #1A1D24;
   --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-reflection: rgba(255, 255, 255, 0.03);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -23,180 +25,144 @@
   }
 
   html {
-    @apply scroll-smooth;
-    -webkit-tap-highlight-color: transparent;
+    @apply scroll-smooth antialiased;
+    scrollbar-gutter: stable;
   }
 
   body {
-    @apply bg-surface text-white font-sans antialiased selection:bg-brand selection:text-white;
+    @apply bg-surface text-white font-sans selection:bg-brand/30 selection:text-white;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     text-rendering: optimizeLegibility;
     overflow-x: hidden;
   }
 
-  /* Focus Ring Fixes for Accessibility */
-  :focus-visible {
-    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-surface;
+  /* FIXED: Circular dependency resolved by using the theme() function directly */
+  h1, h2, h3, h4, .display-text {
+    font-family: 'Bebas Neue', sans-serif;
+    @apply tracking-tight uppercase;
   }
 
-  /* Optimized Headings */
-  h1, h2, h3, h4, .font-display {
-    @apply font-display tracking-tight uppercase;
-    font-display: swap;
+  /* Cinematic Film Grain Overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    opacity: 0.04;
+    pointer-events: none;
+    z-index: 9999;
+    filter: contrast(150%) brightness(100%);
   }
 }
 
 @layer components {
-  /* THE 10X GLASSMORPHISM NEXUS */
+  /* THE NEXUS GLASSMORHPISM V2 */
   .glass-card {
-    @apply bg-surface-light/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl;
-    background-image: 
-      radial-gradient(at top left, var(--glass-reflection), transparent),
-      linear-gradient(to bottom right, rgba(255,255,255,0.02), transparent);
+    @apply relative overflow-hidden bg-surface-light/40 backdrop-blur-3xl border border-white/10 rounded-3xl;
+    box-shadow: 
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+      0 20px 50px -12px rgba(0, 0, 0, 0.5);
   }
 
-  .glass-panel {
-    @apply bg-black/60 backdrop-blur-3xl border-b border-white/5;
+  /* NEON GLOW EFFECTS */
+  .brand-glow {
+    box-shadow: 0 0 40px -10px rgba(var(--brand-rgb), 0.5);
   }
 
-  /* CINEMATIC BUTTONS */
+  /* OPTIMIZED BUTTONS */
   .btn-nexus {
-    @apply relative overflow-hidden px-8 py-4 rounded-2xl font-black transition-all duration-300
-           hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none;
+    @apply relative flex items-center justify-center gap-2 px-8 py-4 rounded-2xl font-bold transition-all duration-500 will-change-transform;
+    @apply hover:scale-[1.02] active:scale-[0.98];
   }
 
   .btn-primary {
-    @apply btn-nexus bg-brand text-white shadow-[0_0_20px_var(--brand-glow)];
+    @apply btn-nexus bg-brand text-white brand-glow overflow-hidden;
   }
 
-  /* TEXT GRADIENTS */
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40;
+  .btn-primary::after {
+    content: "";
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full;
+    transition: transform 0.6s var(--ease-expo);
   }
 
-  .text-brand-glow {
-    text-shadow: 0 0 15px var(--brand-glow);
+  .btn-primary:hover::after {
+    @apply translate-x-full;
+  }
+
+  /* CINEMATIC TEXTURE */
+  .text-metal {
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white via-white to-white/20;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
   }
 }
 
 @layer utilities {
-  /* ADVANCED SCROLLBAR NEXUS */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* HARDWARE ACCELERATED ANIMATIONS */
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite linear;
   }
+
+  /* 10X SCROLLBAR */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     @apply bg-transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-white/10 rounded-full hover:bg-brand/40 transition-colors;
-    border: 1px solid rgba(255,255,255,0.05);
+    @apply bg-white/10 rounded-full border-2 border-transparent bg-clip-content;
+    @apply hover:bg-brand transition-colors;
   }
 
-  /* Firefox Support */
-  .custom-scrollbar {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-  }
-
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* SKELETON ANIMATION 10X */
-  .skeleton-bg {
-    @apply bg-surface-light relative overflow-hidden;
-  }
-  .skeleton-bg::after {
-    content: "";
-    @apply absolute inset-0;
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.03) 50%,
-      transparent 100%
-    );
-    animation: shimmer 1.8s infinite linear;
-  }
-
-  /* MASKING & MESHES */
-  .mask-cinema-player {
-    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-  }
-
-  .bg-grid-nexus {
+  /* MESH GRADIENT BACKGROUNDS */
+  .bg-mesh {
+    background-color: var(--surface);
     background-image: 
-      linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 40px 40px;
+      radial-gradient(at 0% 0%, rgba(var(--brand-rgb), 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.1) 0px, transparent 50%);
+  }
+
+  /* LINE CLAMP FIX FOR MOVIE OVERVIEWS */
+  .clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }
 
-/* 
-  OMNIMUX CORE KEYFRAMES 
-*/
+/* KEYFRAMES */
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
-@keyframes nexus-float {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-10px) scale(1.02); }
+/* 10X MOVIE CARD INTERACTION */
+.movie-card-focus {
+  @apply transition-all duration-700 var(--ease-expo);
 }
 
-@keyframes pulse-glow {
-  0%, 100% { opacity: 1; filter: brightness(1); }
-  50% { opacity: 0.7; filter: brightness(1.5); }
+.movie-card-focus:hover {
+  @apply -translate-y-3 z-30 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)];
 }
 
-/* 
-  COMPLEX CLASSES 
-*/
-.shadow-glow {
-  box-shadow: 0 0 30px 2px var(--brand-glow);
-}
-
-.animate-nexus-float {
-  animation: nexus-float 6s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Movie Card Extreme Hover Fix */
-.movie-card-zoom img {
-  transition: transform 0.7s cubic-bezier(0.33, 1, 0.68, 1);
-}
-.movie-card-zoom:hover img {
-  transform: scale(1.12) translateY(-5px);
-}
-
-/* Progress Loader Customization */
+/* NPROGRESS OVERRIDE */
 #nprogress .bar {
   background: var(--brand) !important;
-  box-shadow: 0 0 15px var(--brand), 0 0 5px var(--brand) !important;
-}
-
-/* 
-  MOBILE OPTIMIZATION 
-  Everything missing for portable nexus browsing
-*/
-@media (max-width: 768px) {
-  .glass-card {
-    @apply rounded-2xl p-6;
+  height: 3px !important;
+  box-shadow: 0 0 15px var(--brand);
   }
-  
-  h1 { @apply text-4xl; }
-  h2 { @apply text-2xl; }
-
-  /* Better Touch Scrolling */
-  .custom-scrollbar {
-    -webkit-overflow-scrolling: touch;
-  }
-}
