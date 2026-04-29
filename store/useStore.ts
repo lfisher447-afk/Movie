@@ -1,8 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface AppState {
-  theme: 'dark' | 'light';
   watchlist: any[];
   history: any[];
   toggleWatchlist: (movie: any) => void;
@@ -13,24 +12,27 @@ interface AppState {
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
-      theme: 'dark',
       watchlist: [],
-      history:[],
+      history: [],
       toggleWatchlist: (movie) => {
         const list = get().watchlist;
-        if (list.find(m => m.id === movie.id)) {
-          set({ watchlist: list.filter(m => m.id !== movie.id) });
-        } else {
-          set({ watchlist:[...list, movie] });
-        }
+        const exists = list.find(m => m.id === movie.id);
+        set({
+          watchlist: exists 
+            ? list.filter(m => m.id !== movie.id) 
+            : [...list, movie]
+        });
       },
       addToHistory: (movie) => {
-        const h = get().history.filter(m => m.id !== movie.id);
-        // Prepend current movie to history (limit to 50 max)
-        set({ history: [{...movie, watchedAt: Date.now()}, ...h].slice(0, 50) });
+        const current = get().history;
+        const filtered = current.filter(m => m.id !== movie.id);
+        set({ history: [{ ...movie, lastWatched: Date.now() }, ...filtered].slice(0, 20) });
       },
-      clearHistory: () => set({ history:[] })
+      clearHistory: () => set({ history: [] })
     }),
-    { name: 'omnimux-vault-v2' }
+    {
+      name: 'omnimux-vault-proto',
+      storage: createJSONStorage(() => localStorage),
+    }
   )
 );
