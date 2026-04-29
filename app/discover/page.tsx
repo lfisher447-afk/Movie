@@ -1,48 +1,74 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { MovieCard } from '@/components/MovieCard';
-import { Filter, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { SlidersHorizontal, Activity } from 'lucide-react';
 import { MovieCardSkeleton } from '@/components/Skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const GENRES =[ { id: 28, name: "Action" }, { id: 12, name: "Adventure" }, { id: 16, name: "Animation" }, { id: 35, name: "Comedy" }, { id: 878, name: "Sci-Fi" }, { id: 27, name: "Horror" } ];
+const GENRES =[ 
+  { id: 28, name: "Action" }, { id: 12, name: "Adventure" }, 
+  { id: 16, name: "Animation" }, { id: 35, name: "Comedy" }, 
+  { id: 878, name: "Sci-Fi" }, { id: 27, name: "Horror" } 
+];
+
+const fetcher = (url: string) => fetch(url).then(r => r.json());
 
 export default function Discover() {
-  const [movies, setMovies] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const[genre, setGenre] = useState('');
+  const [genre, setGenre] = useState('');
   const [year, setYear] = useState('2024');
 
-  useEffect(() => {
-    setLoading(true);
-    fetch(`/api/discover?genre=${genre}&year=${year}`)
-      .then(r => r.json()).then(d => { setMovies(d.results || []); setLoading(false); });
-  }, [genre, year]);
+  // Dynamic parameterized SWR fetching
+  const { data, isLoading } = useSWR(
+    `/api/tmdb?endpoint=/discover/movie&with_genres=${genre}&primary_release_year=${year}&sort_by=popularity.desc&include_adult=false`, 
+    fetcher
+  );
 
   return (
-    <div className="min-h-screen pt-32 px-6 max-w-[1600px] mx-auto pb-24">
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+    <div className="min-h-screen pt-32 px-6 max-w-[1800px] mx-auto pb-40">
+       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-end mb-16 gap-10">
           <div>
-            <h1 className="text-5xl font-display font-black uppercase text-white drop-shadow-lg mb-2">Discover Hub</h1>
-            <p className="text-gray-400">Filter through millions of titles in the OMSS database.</p>
+            <h1 className="font-nexus text-6xl md:text-8xl text-white mb-2">DISCOVER MATRIX</h1>
+            <p className="text-gray-500 font-black tracking-[0.2em] text-[10px] uppercase">Query millions of decryptions across the global network.</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 bg-surface-light p-3 rounded-2xl border border-white/5 shadow-xl">
-             <div className="flex items-center gap-2 px-3 text-gray-500 font-bold border-r border-white/10"><SlidersHorizontal className="w-4 h-4"/> Filters</div>
-             <select value={year} onChange={e=>setYear(e.target.value)} className="bg-black/40 text-white outline-none px-4 py-2 rounded-xl border border-white/10 hover:border-brand transition">
-                <option value="">Any Year</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option>
+          <div className="flex flex-wrap items-center gap-4 glass-panel p-2">
+             <div className="flex items-center gap-2 px-6 text-gray-500 font-black text-[10px] tracking-widest uppercase border-r border-white/10">
+                <SlidersHorizontal className="w-3 h-3"/> Parameters
+             </div>
+             
+             <select 
+                value={year} 
+                onChange={e=>setYear(e.target.value)} 
+                className="bg-black/60 text-white outline-none px-6 py-3 rounded-2xl border border-white/5 hover:border-brand font-black text-[10px] tracking-widest uppercase transition-all"
+             >
+                <option value="">ALL CYCLES</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option>
              </select>
-             <div className="flex gap-2 bg-black/20 p-1 rounded-xl">
-               <button onClick={()=>setGenre('')} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${genre === '' ? 'bg-brand text-white' : 'text-gray-400 hover:text-white'}`}>All</button>
+
+             <div className="flex flex-wrap gap-2 px-2">
+               <button onClick={()=>setGenre('')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all ${genre === '' ? 'bg-brand text-white shadow-brand-glow' : 'bg-white/5 text-gray-500 hover:text-white'}`}>ANY</button>
                {GENRES.map(g => (
-                 <button key={g.id} onClick={()=>setGenre(g.id.toString())} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${genre === g.id.toString() ? 'bg-brand text-white' : 'text-gray-400 hover:text-white'}`}>{g.name}</button>
+                 <button key={g.id} onClick={()=>setGenre(g.id.toString())} className={`px-5 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all ${genre === g.id.toString() ? 'bg-brand text-white shadow-brand-glow' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
+                   {g.name.toUpperCase()}
+                 </button>
                ))}
              </div>
           </div>
        </div>
 
-       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-6 gap-6">
-         {loading ? Array(18).fill(0).map((_,i) => <MovieCardSkeleton key={i}/>) : movies.map(m => <MovieCard key={m.id} movie={m} />)}
-       </div>
+       <AnimatePresence mode="wait">
+           <motion.div 
+             key={`${genre}-${year}`}
+             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+             className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"
+           >
+             {isLoading ? (
+                Array(18).fill(0).map((_,i) => <MovieCardSkeleton key={i}/>)
+             ) : (
+                data?.results?.map((m: any) => <MovieCard key={m.id} movie={m} />)
+             )}
+           </motion.div>
+       </AnimatePresence>
     </div>
   );
 }
