@@ -1,6 +1,7 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+// lib/firebase.ts
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth, GoogleAuthProvider } from "firebase/auth";
+import { getFirestore, Firestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,17 +12,34 @@ const firebaseConfig = {
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Advanced Singleton with Type Safety
+class FirebaseService {
+    private static instance: FirebaseService;
+    public app: FirebaseApp;
+    public auth: Auth;
+    public db: Firestore;
+    public googleProvider: GoogleAuthProvider;
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const googleProvider = new GoogleAuthProvider();
+    private constructor() {
+        this.app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+        this.auth = getAuth(this.app);
+        this.db = getFirestore(this.app);
+        this.googleProvider = new GoogleAuthProvider();
+        this.googleProvider.setCustomParameters({ prompt: 'select_account' });
+        
+        // Enable Offline Persistence for High Performance
+        if (typeof window !== "undefined") {
+            enableIndexedDbPersistence(this.db).catch((err) => {
+                if (err.code === 'failed-precondition') console.warn("Multiple tabs open, persistence disabled.");
+            });
+        }
+    }
 
-// Ensure sessions persist appropriately across tabs
-try {
-    setPersistence(auth, browserLocalPersistence);
-} catch (error) {
-    console.error("Firebase persistence error", error);
+    public static getInstance(): FirebaseService {
+        if (!FirebaseService.instance) FirebaseService.instance = new FirebaseService();
+        return FirebaseService.instance;
+    }
 }
 
-export default app;
+export const firebase = FirebaseService.getInstance();
+export const { auth, db, googleProvider } = firebase;
