@@ -1,28 +1,27 @@
 'use client';
-import { useEffect } from 'react';
-import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
 import Link from 'next/link';
 
-export default function Error({ error, reset }: { error: Error & { digest?: string }, reset: () => void }) {
-  useEffect(() => { console.error("OMSS Framework Core Error:", error); }, [error]);
-
+export default function Error({ error, reset }: { error: Error, reset: () => void }) {
   return (
-    <div className="h-screen w-full flex items-center justify-center p-6 relative overflow-hidden bg-surface">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-600/10 blur-[150px] rounded-full pointer-events-none"></div>
+    <div className="h-screen flex items-center justify-center p-6 relative bg-surface overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand/20 blur-[150px] rounded-full pointer-events-none" />
       
-      <div className="glass-card max-w-xl w-full p-12 text-center relative z-10 border-red-500/20 shadow-[0_0_50px_rgba(229,9,20,0.1)]">
-         <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-           <AlertTriangle className="w-12 h-12 text-brand animate-pulse"/>
+      <div className="glass-panel p-12 max-w-xl text-center space-y-8 relative z-10 border-brand/20 shadow-[0_0_50px_rgba(229,9,20,0.15)]">
+         <div className="w-20 h-20 bg-brand/10 border border-brand/30 rounded-full flex items-center justify-center mx-auto">
+           <AlertTriangle className="w-10 h-10 text-brand" />
          </div>
-         <h1 className="text-4xl font-display font-black uppercase tracking-tighter mb-4 text-white">System Override Detected</h1>
-         <p className="text-gray-400 mb-8 font-medium">The OMSS Extraction engine encountered a critical stream rupture. Retrying the node connection might resolve this.</p>
+         <div>
+            <h1 className="font-nexus text-5xl mb-2">SYSTEM OVERRIDE</h1>
+            <p className="text-gray-400 text-sm font-medium">A core exception occurred in the Omnimux pipeline.</p>
+         </div>
          
-         <div className="flex items-center justify-center gap-4">
-            <button onClick={reset} className="bg-brand hover:bg-brand-hover text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition shadow-xl">
-               <RefreshCw className="w-5 h-5"/> Reboot Node
+         <div className="flex flex-col gap-4">
+            <button onClick={reset} className="btn-nexus bg-brand hover:brightness-110 text-white w-full">
+               <RotateCcw className="w-5 h-5"/> REBOOT NODE
             </button>
-            <Link href="/" className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-4 rounded-xl font-bold flex items-center gap-2 transition">
-               <Home className="w-5 h-5"/> Return to Core
+            <Link href="/" className="btn-nexus bg-white/5 border border-white/10 text-white w-full">
+               <Home className="w-5 h-5"/> RETURN TO NEXUS
             </Link>
          </div>
       </div>
