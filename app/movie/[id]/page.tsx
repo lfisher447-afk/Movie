@@ -3,9 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 import { Play, Users, Star, BookmarkPlus, Check, Share2, Server } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { Comments } from '@/components/Comments';
-import { WatchPartyChat } from '@/components/WatchPartyChat'; // NEW ADDITION
+import { WatchPartyChat } from '@/components/WatchPartyChat'; 
+import { WatchPartyOverview } from '@/components/WatchPartyOverview'; // FIXED: Feature Restored
 import { useStore } from '@/store/useStore';
-import { fetchTMDB } from '@/lib/tmdb';
 
 export default function MovieDetail({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
@@ -17,15 +17,18 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
 
   const { watchlist, toggleWatchlist, addToHistory } = useStore();
   const videoRef = useRef<HTMLIFrameElement>(null);
+  const isHost = useRef(false); // FIXED: Ref Restored
 
   useEffect(() => {
-    fetchTMDB(`/movie/${params.id}`, { append_to_response: 'credits,similar' })
-      .then(data => { setMovie(data); addToHistory(data); });
+    // FIXED: Proxies the fetch to prevent client-side credential leaking.
+    fetch(`/api/tmdb?endpoint=/movie/${params.id}&append_to_response=credits,similar`)
+        .then(r => r.json())
+        .then(data => { setMovie(data); addToHistory(data); });
     
     fetch(`/api/stream?type=movie&id=${params.id}`).then(r => r.json()).then(data => {
         if(data.sources) setSources(data.sources);
     });
-  }, [params.id]);
+  },[params.id]);
 
   const createParty = () => {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -38,7 +41,6 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-surface pb-24 font-sans">
-        {/* Dynamic Massive Backdrop */}
         <div className="absolute top-0 w-full h-[90vh] -z-10 overflow-hidden">
             <img src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`} className="w-full h-full object-cover opacity-20 blur-3xl scale-110 saturate-[2]" />
             <div className="absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/80 to-surface" />
@@ -46,7 +48,6 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
 
         <div className="pt-28 px-4 md:px-10 max-w-[1800px] mx-auto relative cursor-default">
             
-            {/* Top Meta Header */}
             <div className="flex flex-col md:flex-row justify-between md:items-end gap-6 mb-8 mt-4">
                 <div>
                     <h1 className="text-5xl md:text-7xl font-display font-black uppercase text-white tracking-tighter drop-shadow-2xl">{movie.title}</h1>
@@ -72,15 +73,14 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
             </div>
 
             <div className="flex flex-col xl:flex-row gap-8">
-                {/* LEFT MAIN: PLAYER & METADATA */}
                 <div className="flex-1 w-full flex flex-col min-w-0">
                     
+                    {/* CORE PLAYER */}
                     <div className="bg-black/80 aspect-video rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.8)] border-[2px] border-white/10 relative ring-1 ring-white/5">
-                        {roomCode && (
-                          <div className="absolute top-4 left-4 z-50 bg-brand text-white px-4 py-2 rounded-xl text-xs font-bold font-display uppercase tracking-widest shadow-[0_0_20px_rgba(229,9,20,0.8)] border border-red-400 flex items-center gap-3">
-                            <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span> Live Sync: {roomCode}
-                          </div>
-                        )}
+                        
+                        {/* FIXED: Restored Firebase Synch logic on top of the player */}
+                        {roomCode && <WatchPartyOverview roomCode={roomCode} videoRef={videoRef} isHostRef={isHost} />}
+                        
                         <iframe ref={videoRef} src={sources[selectedSource]?.url} className="w-full h-full bg-black border-none" allowFullScreen allow="autoplay; fullscreen" />
                     </div>
 
@@ -101,7 +101,7 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                     </div>
                 </div>
 
-                {/* RIGHT SIDEBAR: Chat OR Cast */}
+                {/* Sidebar logic */}
                 {roomCode ? (
                     <WatchPartyChat roomCode={roomCode} />
                 ) : (
