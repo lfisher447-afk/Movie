@@ -4,31 +4,32 @@ import { Play, Users, Star, BookmarkPlus, Check, Share2, Server } from 'lucide-r
 import { useSearchParams } from 'next/navigation';
 import { Comments } from '@/components/Comments';
 import { WatchPartyChat } from '@/components/WatchPartyChat'; 
-import { WatchPartyOverview } from '@/components/WatchPartyOverview'; // FIXED: Feature Restored
+import { WatchPartyOverview } from '@/components/WatchPartyOverview'; 
 import { useStore } from '@/store/useStore';
+import { useMounted } from '@/hooks/useMounted';
 
 export default function MovieDetail({ params }: { params: { id: string } }) {
   const searchParams = useSearchParams();
   const roomCode = searchParams.get('room');
   
-  const[movie, setMovie] = useState<any>(null);
+  const [movie, setMovie] = useState<any>(null);
   const [sources, setSources] = useState<any[]>([]);
   const [selectedSource, setSelectedSource] = useState(0);
 
   const { watchlist, toggleWatchlist, addToHistory } = useStore();
+  const isMounted = useMounted();
   const videoRef = useRef<HTMLIFrameElement>(null);
-  const isHost = useRef(false); // FIXED: Ref Restored
+  const isHost = useRef(false);
 
   useEffect(() => {
-    // FIXED: Proxies the fetch to prevent client-side credential leaking.
     fetch(`/api/tmdb?endpoint=/movie/${params.id}&append_to_response=credits,similar`)
         .then(r => r.json())
         .then(data => { setMovie(data); addToHistory(data); });
     
     fetch(`/api/stream?type=movie&id=${params.id}`).then(r => r.json()).then(data => {
-        if(data.sources) setSources(data.sources);
+        if (data.sources) setSources(data.sources);
     });
-  },[params.id]);
+  }, [params.id]);
 
   const createParty = () => {
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -38,11 +39,13 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
   if (!movie || sources.length === 0) return <div className="h-screen w-full flex items-center justify-center skeleton-bg" />;
 
   const inWatchlist = watchlist.some(m => m.id === movie.id);
+  // Safely fallback image array or null vectors from TMDB
+  const backdropImage = movie.backdrop_path ? `https://image.tmdb.org/t/p/original${movie.backdrop_path}` : 'https://via.placeholder.com/1920x1080?text=Backdrop+Unavailable';
 
   return (
-    <div className="min-h-screen bg-surface pb-24 font-sans">
+    <div className="min-h-screen bg-surface pb-24 font-sans border border-transparent">
         <div className="absolute top-0 w-full h-[90vh] -z-10 overflow-hidden">
-            <img src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`} className="w-full h-full object-cover opacity-20 blur-3xl scale-110 saturate-[2]" />
+            <img src={backdropImage} className="w-full h-full object-cover opacity-20 blur-3xl scale-110 saturate-[2]" alt="Backdrop" />
             <div className="absolute inset-0 bg-gradient-to-b from-surface/40 via-surface/80 to-surface" />
         </div>
 
@@ -53,8 +56,8 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                     <h1 className="text-5xl md:text-7xl font-display font-black uppercase text-white tracking-tighter drop-shadow-2xl">{movie.title}</h1>
                     <div className="flex items-center gap-4 mt-3 text-sm font-bold text-gray-400">
                         <span className="text-brand border border-brand/30 bg-brand/10 px-2 py-0.5 rounded">{movie.status}</span>
-                        <span className="flex items-center text-yellow-400 gap-1"><Star className="w-4 h-4 fill-current"/>{movie.vote_average.toFixed(1)}</span>
-                        <span>{movie.runtime} min</span> • <span>{movie.release_date}</span>
+                        <span className="flex items-center text-yellow-400 gap-1"><Star className="w-4 h-4 fill-current"/>{movie.vote_average?.toFixed(1)}</span>
+                        <span>{movie.runtime || 'N/A'} min</span> • <span>{movie.release_date}</span>
                     </div>
                 </div>
                 <div className="flex gap-3">
@@ -63,9 +66,11 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                          <Users className="w-5 h-5"/> Host Party Room
                      </button>
                    )}
-                   <button onClick={() => toggleWatchlist(movie)} className="bg-white/10 hover:bg-white/20 backdrop-blur border border-white/10 px-6 py-4 rounded-2xl flex items-center justify-center transition-colors">
-                     {inWatchlist ? <Check className="w-6 h-6 text-brand"/> : <BookmarkPlus className="w-6 h-6 text-white" />}
-                   </button>
+                   {isMounted && (
+                     <button onClick={() => toggleWatchlist(movie)} className="bg-white/10 hover:bg-white/20 backdrop-blur border border-white/10 px-6 py-4 rounded-2xl flex items-center justify-center transition-colors">
+                       {inWatchlist ? <Check className="w-6 h-6 text-brand"/> : <BookmarkPlus className="w-6 h-6 text-white" />}
+                     </button>
+                   )}
                    <button className="bg-white/10 hover:bg-white/20 backdrop-blur border border-white/10 px-6 py-4 rounded-2xl flex items-center justify-center transition-colors">
                      <Share2 className="w-5 h-5 text-white" />
                    </button>
@@ -75,12 +80,8 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
             <div className="flex flex-col xl:flex-row gap-8">
                 <div className="flex-1 w-full flex flex-col min-w-0">
                     
-                    {/* CORE PLAYER */}
                     <div className="bg-black/80 aspect-video rounded-3xl overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.8)] border-[2px] border-white/10 relative ring-1 ring-white/5">
-                        
-                        {/* FIXED: Restored Firebase Synch logic on top of the player */}
                         {roomCode && <WatchPartyOverview roomCode={roomCode} videoRef={videoRef} isHostRef={isHost} />}
-                        
                         <iframe ref={videoRef} src={sources[selectedSource]?.url} className="w-full h-full bg-black border-none" allowFullScreen allow="autoplay; fullscreen" />
                     </div>
 
@@ -101,7 +102,6 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                     </div>
                 </div>
 
-                {/* Sidebar logic */}
                 {roomCode ? (
                     <WatchPartyChat roomCode={roomCode} />
                 ) : (
@@ -111,9 +111,9 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                                 <span className="w-2 h-6 bg-brand block rounded"></span> Cast & Crew
                             </h3>
                             <div className="space-y-4 max-h-[600px] overflow-y-auto custom-scrollbar pr-2">
-                                {movie.credits?.cast?.slice(0, 12).map((c:any) => (
+                                {movie.credits?.cast?.slice(0, 12).map((c: any) => (
                                     <div key={c.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-2xl border border-transparent hover:border-white/10 hover:bg-white/10 transition group cursor-default">
-                                        <img src={c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : 'https://via.placeholder.com/150'} className="w-14 h-14 rounded-xl object-cover shadow-md" />
+                                        <img src={c.profile_path ? `https://image.tmdb.org/t/p/w185${c.profile_path}` : `https://ui-avatars.com/api/?name=${c.name}`} className="w-14 h-14 rounded-xl object-cover shadow-md" alt={c.name} />
                                         <div>
                                             <p className="font-bold text-white group-hover:text-brand transition text-sm">{c.name}</p>
                                             <p className="text-xs text-gray-500 mt-1">{c.character}</p>
