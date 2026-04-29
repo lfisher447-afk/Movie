@@ -1,27 +1,202 @@
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* 
+  OMNIMUX DESIGN SYSTEM VARIABLES 
+  DEDICATED 10X ARCHITECTURE
+*/
+:root {
+  --brand: #E50914;
+  --brand-hover: #f40a15;
+  --brand-glow: rgba(229, 9, 20, 0.4);
+  --surface: #070709;
+  --surface-light: #101218;
+  --surface-lighter: #1A1D24;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-reflection: rgba(255, 255, 255, 0.03);
+}
+
 @layer base {
+  * {
+    @apply border-white/5;
+  }
+
+  html {
+    @apply scroll-smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-surface text-white font-sans antialiased selection:bg-brand selection:text-white scroll-smooth;
+    @apply bg-surface text-white font-sans antialiased selection:bg-brand selection:text-white;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* Focus Ring Fixes for Accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-surface;
+  }
+
+  /* Optimized Headings */
+  h1, h2, h3, h4, .font-display {
+    @apply font-display tracking-tight uppercase;
+    font-display: swap;
+  }
+}
+
+@layer components {
+  /* THE 10X GLASSMORPHISM NEXUS */
+  .glass-card {
+    @apply bg-surface-light/40 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl;
+    background-image: 
+      radial-gradient(at top left, var(--glass-reflection), transparent),
+      linear-gradient(to bottom right, rgba(255,255,255,0.02), transparent);
+  }
+
+  .glass-panel {
+    @apply bg-black/60 backdrop-blur-3xl border-b border-white/5;
+  }
+
+  /* CINEMATIC BUTTONS */
+  .btn-nexus {
+    @apply relative overflow-hidden px-8 py-4 rounded-2xl font-black transition-all duration-300
+           hover:scale-[1.03] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply btn-nexus bg-brand text-white shadow-[0_0_20px_var(--brand-glow)];
+  }
+
+  /* TEXT GRADIENTS */
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-white/40;
+  }
+
+  .text-brand-glow {
+    text-shadow: 0 0 15px var(--brand-glow);
   }
 }
 
 @layer utilities {
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  
-  .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-  .custom-scrollbar::-webkit-scrollbar-track { @apply bg-transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors; }
-  
-  .glass-card { @apply bg-surface-light/60 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl; }
-  .glass-panel { @apply bg-black/40 backdrop-blur-2xl border border-white/5; }
+  /* ADVANCED SCROLLBAR NEXUS */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-brand/40 transition-colors;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+
+  /* Firefox Support */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* SKELETON ANIMATION 10X */
+  .skeleton-bg {
+    @apply bg-surface-light relative overflow-hidden;
+  }
+  .skeleton-bg::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.03) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.8s infinite linear;
+  }
+
+  /* MASKING & MESHES */
+  .mask-cinema-player {
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  }
+
+  .bg-grid-nexus {
+    background-image: 
+      linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
 }
 
-.skeleton-bg {
-  background: linear-gradient(90deg, #101218 25%, #1A1D24 50%, #101218 75%);
-  background-size: 200% 100%;
+/* 
+  OMNIMUX CORE KEYFRAMES 
+*/
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes nexus-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1.02); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.7; filter: brightness(1.5); }
+}
+
+/* 
+  COMPLEX CLASSES 
+*/
+.shadow-glow {
+  box-shadow: 0 0 30px 2px var(--brand-glow);
+}
+
+.animate-nexus-float {
+  animation: nexus-float 6s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Movie Card Extreme Hover Fix */
+.movie-card-zoom img {
+  transition: transform 0.7s cubic-bezier(0.33, 1, 0.68, 1);
+}
+.movie-card-zoom:hover img {
+  transform: scale(1.12) translateY(-5px);
+}
+
+/* Progress Loader Customization */
+#nprogress .bar {
+  background: var(--brand) !important;
+  box-shadow: 0 0 15px var(--brand), 0 0 5px var(--brand) !important;
+}
+
+/* 
+  MOBILE OPTIMIZATION 
+  Everything missing for portable nexus browsing
+*/
+@media (max-width: 768px) {
+  .glass-card {
+    @apply rounded-2xl p-6;
+  }
+  
+  h1 { @apply text-4xl; }
+  h2 { @apply text-2xl; }
+
+  /* Better Touch Scrolling */
+  .custom-scrollbar {
+    -webkit-overflow-scrolling: touch;
+  }
 }
