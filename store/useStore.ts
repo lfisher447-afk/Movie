@@ -32,7 +32,6 @@ export const useStore = create<AppState>()(
       history: [],
       adBlockMode: 'relaxed',
       
-      // Fixed: multi-line comment was breaking the build
       setAdBlockMode: (mode) => set({ adBlockMode: mode }),
 
       toggleWatchlist: (movie) => {
@@ -61,7 +60,7 @@ export const useStore = create<AppState>()(
     {
       name: 'omnimux-vault-production',
       storage: createJSONStorage(() => localStorage),
-      version: 1, // Advanced: handles state migration if you change data structures later
+      version: 1, 
     }
   )
 );
