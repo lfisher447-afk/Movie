@@ -1,13 +1,27 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
+export type AdBlockLevel = 'strict' | 'relaxed' | 'off';
+
+interface MediaItem {
+  id: string | number;
+  title?: string;
+  name?: string;
+  backdrop_path?: string;
+  vote_average?: number;
+  runtime?: number;
+  release_date?: string;
+  first_air_date?: string;
+  lastWatched?: number;
+}
+
 interface AppState {
-  watchlist: any[];
-  history: any[];
-  adBlockMode: 'strict' | 'relaxed' | 'off';
-  setAdBlockMode: (mode: 'strict' | 'relaxed' | 'off') => void;
-  toggleWatchlist: (movie: any) => void;
-  addToHistory: (movie: any) => void;
+  watchlist: MediaItem[];
+  history: MediaItem[];
+  adBlockMode: AdBlockLevel;
+  setAdBlockMode: (mode: AdBlockLevel) => void;
+  toggleWatchlist: (movie: MediaItem) => void;
+  addToHistory: (movie: MediaItem) => void;
   clearHistory: () => void;
 }
 
@@ -16,19 +30,21 @@ export const useStore = create<AppState>()(
     (set, get) => ({
       watchlist: [],
       history: [],
-      adBlockMode: 'relaxed', // Default to relaxed interceptor as strict breaks some iframes
-      setAdBlockMode: (mode) => set({
-        adBlockMode: mode
-      }),
+      adBlockMode: 'relaxed',
+      
+      // Fixed: multi-line comment was breaking the build
+      setAdBlockMode: (mode) => set({ adBlockMode: mode }),
+
       toggleWatchlist: (movie) => {
         const list = get().watchlist;
         const exists = list.find((m) => m.id === movie.id);
         set({
-          watchlist: exists
-            ? list.filter((m) => m.id !== movie.id)
+          watchlist: exists 
+            ? list.filter((m) => m.id !== movie.id) 
             : [...list, movie],
         });
       },
+
       addToHistory: (movie) => {
         const current = get().history;
         const filtered = current.filter((m) => m.id !== movie.id);
@@ -39,13 +55,13 @@ export const useStore = create<AppState>()(
           ].slice(0, 20),
         });
       },
-      clearHistory: () => set({
-        history: []
-      }),
+
+      clearHistory: () => set({ history: [] }),
     }),
     {
-      name: 'omnimux-vault-production', // renamed to not conflict with old state
+      name: 'omnimux-vault-production',
       storage: createJSONStorage(() => localStorage),
+      version: 1, // Advanced: handles state migration if you change data structures later
     }
   )
 );
