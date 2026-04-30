@@ -423,7 +423,8 @@ function RandomDiscoveryCTA() {
 
 // ─── REUSABLE CINEMATIC MOVIE ROW ─────────────────────────────────────────────
 
-function MovieRow({ title, movies, isSpecial = false, loading = false, icon, exploreHref, delay = 0, showProgress = false }: SectionProps & { movies: Movie[], isSpecial?: boolean, loading?: boolean, showProgress?: boolean }) {
+// FIX APPLIED HERE: Added Omit<SectionProps, 'children'> so MovieRow doesn't strictly require children
+function MovieRow({ title, movies, isSpecial = false, loading = false, icon, exploreHref, delay = 0, showProgress = false }: Omit<SectionProps, 'children'> & { movies: Movie[], isSpecial?: boolean, loading?: boolean, showProgress?: boolean }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
