@@ -8,6 +8,7 @@ interface MediaItem {
   title?: string;
   name?: string;
   backdrop_path?: string;
+  poster_path?: string; // <--- ADD THIS LINE
   vote_average?: number;
   runtime?: number;
   release_date?: string;
