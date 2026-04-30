@@ -1,4 +1,3 @@
-// app/profile/page.tsx
 'use client';
 import { useNexusAuth } from '@/context/AuthContext';
 import { useStore } from '@/store/useStore';
@@ -6,6 +5,7 @@ import { useMounted } from '@/hooks/useMounted';
 import { MovieCard } from '@/components/MovieCard';
 import { Power, ShieldCheck, Database, History, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user, signIn, logOut, loading } = useNexusAuth();
@@ -36,8 +36,7 @@ export default function ProfilePage() {
   return (
     <div className="max-w-[1500px] mx-auto px-6 pt-32 pb-40">
       <div className="flex flex-col md:flex-row items-center gap-10 p-12 glass-panel border-brand/10 mb-20 relative overflow-hidden shadow-[0_20px_50px_-20px_rgba(229,9,20,0.2)] animate-reveal">
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-brand/20 blur-[150px] pointer-events-none" />
-        <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}`} className="w-32 h-32 rounded-[2rem] border-2 border-brand/50 shadow-[0_0_40px_rgba(229,9,20,0.4)] z-10" alt="User" />
+        <Image src={user.photoURL || `https://ui-avatars.com/api/?name=${user.email}`} width={128} height={128} className="w-32 h-32 rounded-[2rem] border-2 border-brand/50 shadow-[0_0_40px_rgba(229,9,20,0.4)] z-10" alt="User" />
         <div className="flex-1 text-center md:text-left space-y-2 z-10">
           <h2 className="font-nexus text-6xl break-all drop-shadow-lg">{user.displayName}</h2>
           <p className="text-brand font-black text-xs tracking-[0.3em] uppercase opacity-80">{user.email}</p>
@@ -51,7 +50,6 @@ export default function ProfilePage() {
         <div className="xl:col-span-3 space-y-8 animate-reveal" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center justify-between border-b border-white/10 pb-6">
                 <h3 className="font-nexus text-4xl flex items-center gap-4"><Database className="text-brand" /> THE_VAULT</h3>
-                <span className="text-gray-400 font-black text-xs uppercase tracking-widest bg-white/5 border border-white/10 px-4 py-2 rounded-xl shadow-inner">{watchlist.length} ITEMS SECURED</span>
             </div>
             {watchlist.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
@@ -59,9 +57,7 @@ export default function ProfilePage() {
                 </div>
             ) : (
                 <div className="text-center py-24 bg-white/5 rounded-[2rem] border border-white/5 relative overflow-hidden">
-                    <Database className="w-16 h-16 text-white/10 mx-auto mb-6 relative z-10" />
                     <p className="font-nexus text-2xl text-white/40 tracking-[0.2em] relative z-10">VAULT IS EMPTY</p>
-                    <Link href="/discover" className="btn-nexus bg-brand text-white mt-8 inline-flex relative z-10 shadow-brand-glow">EXPLORE NEXUS</Link>
                 </div>
             )}
         </div>
@@ -69,23 +65,20 @@ export default function ProfilePage() {
         <div className="space-y-8 animate-reveal" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center justify-between border-b border-white/10 pb-6">
             <h3 className="font-nexus text-3xl flex items-center gap-3"><History className="text-brand"/> LOGS</h3>
-            <button onClick={clearHistory} className="text-[10px] font-black text-gray-500 hover:text-brand transition-colors tracking-widest border border-white/10 px-3 py-1.5 rounded-lg hover:border-brand/40 bg-black/40 shadow-inner">PURGE_SEQ</button>
+            <button onClick={clearHistory} className="text-[10px] font-black text-gray-500 hover:text-brand transition-colors tracking-widest border border-white/10 px-3 py-1.5 rounded-lg">PURGE_SEQ</button>
           </div>
           <div className="space-y-4">
             {history.length > 0 ? history.slice(0, 10).map((item, idx) => (
-               <Link href={`/movie/${item.id}`} key={idx} className="flex gap-5 p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-brand/40 hover:bg-white/10 transition-all cursor-pointer shadow-lg backdrop-blur-md relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-brand/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-                  <img src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : 'https://via.placeholder.com/200x300'} className="w-14 h-20 rounded-xl object-cover shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-500 z-10" />
+               <Link href={`/movie/${item.id}?type=${item.media_type || 'movie'}`} key={idx} className="flex gap-5 p-4 bg-white/5 rounded-2xl border border-white/5 group hover:border-brand/40 hover:bg-white/10 transition-all cursor-pointer shadow-lg backdrop-blur-md relative overflow-hidden">
+                  <Image src={item.poster_path ? `https://image.tmdb.org/t/p/w200${item.poster_path}` : `https://ui-avatars.com/api/?name=${item.title || item.name}`} width={56} height={80} alt="" className="w-14 h-20 rounded-xl object-cover shadow-2xl grayscale group-hover:grayscale-0 transition-all duration-500 z-10" />
                   <div className="flex-1 flex flex-col justify-center z-10">
                     <p className="text-sm font-bold text-white line-clamp-2 leading-tight group-hover:text-brand transition-colors">{item.title || item.name}</p>
-                    <p className="text-[9px] text-gray-400 mt-2 uppercase font-black tracking-[0.2em] flex items-center gap-1.5 bg-black/40 w-fit px-2 py-1 rounded-md border border-white/5"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.8)]" /> RELAY ACTIVE</p>
+                    <p className="text-[9px] text-gray-400 mt-2 uppercase font-black tracking-[0.2em]">{new Date(item.lastWatched || 0).toLocaleDateString()}</p>
                   </div>
                   <ChevronRight className="w-5 h-5 text-gray-600 self-center group-hover:text-brand transition-colors group-hover:translate-x-1 z-10" />
                </Link>
             )) : (
-              <div className="text-center py-12 bg-white/5 rounded-[2rem] border border-white/5">
-                 <p className="font-nexus text-lg text-white/30 tracking-[0.2em]">NO LOGS FOUND</p>
-              </div>
+              <div className="text-center py-12 bg-white/5 rounded-[2rem] border border-white/5"><p className="font-nexus text-lg text-white/30 tracking-[0.2em]">NO LOGS FOUND</p></div>
             )}
           </div>
         </div>
