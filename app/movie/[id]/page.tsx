@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import useSWR from 'swr';
-import { Power, Check, Plus, Monitor, Server, Activity, Users } from 'lucide-react';
+import { Power, Check, Plus, Monitor, Server, Activity, Users, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useMounted } from '@/hooks/useMounted';
 import { useNexusAuth } from '@/context/AuthContext'; 
@@ -18,6 +18,10 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
   const [cinema, setCinema] = useState(false);
   const [currentNode, setCurrentNode] = useState(0);
   const [roomCode, setRoomCode] = useState<string | null>(null);
+  
+  // Nexus Security Shield States
+  const[adBlockMode, setAdBlockMode] = useState<'strict' | 'relaxed' | 'off'>('strict');
+  const[intercepts, setIntercepts] = useState(2); // Absorbs invisible ad-click layers
   
   const { watchlist, toggleWatchlist, addToHistory } = useStore();
   const { user } = useNexusAuth(); 
@@ -40,6 +44,11 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
           }
       }
   },[movie]);
+
+  // Reset ad interceptors whenever you switch a node or change the shield mode
+  useEffect(() => {
+      setIntercepts(2);
+  }, [currentNode, adBlockMode]);
 
   if (!isMounted || !movie) {
     return (
@@ -67,6 +76,13 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
       toast.success(`ROOM SECURE: IDENTIFIER ${code}`);
   };
 
+  // Secure iFrame Sandbox generation (Blocks top-navigation and popups natively)
+  const sandboxProps = adBlockMode === 'off' ? {} : {
+      sandbox: adBlockMode === 'strict' 
+          ? "allow-scripts allow-same-origin allow-presentation" // Total Blockade
+          : "allow-scripts allow-same-origin allow-presentation allow-popups allow-forms" // Relaxed Blockade
+  };
+
   return (
     <div className={`min-h-screen transition-all duration-[1200ms] ease-out ${cinema ? 'bg-black' : 'bg-transparent'}`}>
       
@@ -83,11 +99,28 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
             {/* Embedded Relay Frame Player */}
             <div className={`transition-all duration-1000 ease-[cubic-bezier(0.16, 1, 0.3, 1)] overflow-hidden relative group/player flex-1 ${cinema ? 'w-full shadow-2xl rounded-[2rem] border border-white/5' : 'aspect-video glass-panel shadow-[0_40px_80px_-20px_rgba(0,0,0,0.9)]'}`}>
                 
+                {/* Advanced AdBlocker Overlay Interceptor */}
+                {adBlockMode === 'relaxed' && intercepts > 0 && (
+                  <div 
+                    className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-pointer group"
+                    onClick={(e) => {
+                      e.preventDefault(); e.stopPropagation();
+                      setIntercepts(v => v - 1);
+                      toast.success(`SHIELD: Absorbed invisible popup layer (${intercepts - 1} remaining)`, { icon: '🛡️' });
+                    }}
+                  >
+                    <div className="bg-black/90 text-white px-6 py-3 rounded-2xl text-[10px] font-black tracking-[0.2em] border border-brand/50 shadow-[0_0_30px_rgba(229,9,20,0.4)] group-hover:bg-brand transition-colors flex items-center gap-3">
+                      <ShieldAlert className="w-4 h-4 text-brand group-hover:text-white transition-colors" />
+                      INTERCEPTING AD-LAYER... CLICK ANYWHERE TO CLEAR
+                    </div>
+                  </div>
+                )}
+
                 {roomCode && cinema && (
                     <WatchPartyOverview roomCode={roomCode} videoRef={videoRef} isHostRef={isHostRef} />
                 )}
                 
-                <iframe ref={videoRef} src={streams?.sources?.[currentNode]?.url} className="w-full h-full absolute inset-0 bg-black" allowFullScreen />
+                <iframe ref={videoRef} src={streams?.sources?.[currentNode]?.url} className="w-full h-full absolute inset-0 bg-black" allowFullScreen {...sandboxProps} />
                 
                 {cinema && (
                     <button onClick={() => {
@@ -100,16 +133,35 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                 )}
             </div>
 
-            {/* Core Node Selectors */}
+            {/* Core Node Selectors & Security Shield */}
             {!cinema && (
-              <div className="flex flex-wrap gap-4 items-center glass-panel p-4 rounded-3xl mx-auto w-full border-brand/5 shadow-2xl animate-reveal">
-                  <div className="font-nexus text-gray-500 text-sm tracking-[0.2em] px-6 border-r border-white/10 flex items-center gap-3">
-                      <Server className="w-4 h-4 text-brand animate-pulse"/> RELAY_NODES
+              <div className="flex flex-col gap-4 glass-panel p-6 rounded-3xl mx-auto w-full border-brand/5 shadow-2xl animate-reveal">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between w-full border-b border-white/10 pb-4 gap-4">
+                      <div className="font-nexus text-gray-500 text-sm tracking-[0.2em] flex items-center gap-3">
+                          <Server className="w-4 h-4 text-brand animate-pulse"/> RELAY_NODES
+                      </div>
+                      
+                      {/* Security Shield UI */}
+                      <div className="flex items-center gap-3 bg-black/40 p-1.5 rounded-2xl border border-white/10">
+                          <span className="text-[9px] font-black tracking-widest text-gray-500 ml-2 hidden sm:block">NEXUS_SHIELD:</span>
+                          <div className="flex">
+                              {['strict', 'relaxed', 'off'].map(mode => (
+                                <button key={mode} onClick={() => setAdBlockMode(mode as any)}
+                                  className={`px-4 py-2 rounded-xl text-[9px] font-black tracking-widest transition-all uppercase flex items-center gap-2 ${adBlockMode === mode ? 'bg-brand text-white shadow-[0_0_15px_rgba(229,9,20,0.4)]' : 'text-gray-500 hover:text-white'}`}>
+                                  {mode === 'strict' && <ShieldCheck className="w-3 h-3" />}
+                                  {mode === 'relaxed' && <ShieldAlert className="w-3 h-3" />}
+                                  {mode === 'off' && <ShieldX className="w-3 h-3" />}
+                                  {mode}
+                                </button>
+                              ))}
+                          </div>
+                      </div>
                   </div>
-                  <div className="flex flex-wrap gap-3 flex-1 px-4">
+
+                  <div className="flex flex-wrap gap-3 w-full max-h-[220px] overflow-y-auto custom-scrollbar pr-2 pb-2">
                     {streams?.sources?.map((s: any, i: number) => (
                         <button key={i} onClick={() => setCurrentNode(i)}
-                          className={`px-6 py-3.5 rounded-2xl text-[10px] font-black tracking-[0.2em] transition-all flex items-center gap-2 ${currentNode === i ? 'bg-brand text-white shadow-brand-glow border-brand' : 'bg-black/60 text-gray-400 hover:text-white hover:bg-white/10 border-white/5'} border`}>
+                          className={`px-5 py-3 rounded-2xl text-[9px] font-black tracking-[0.2em] transition-all flex items-center gap-2 ${currentNode === i ? 'bg-brand text-white shadow-brand-glow border-brand' : 'bg-black/60 text-gray-400 hover:text-white hover:bg-white/10 border-white/5'} border flex-shrink-0`}>
                             {currentNode === i && <Activity className="w-3 h-3 animate-pulse" />}
                             {s.name}
                         </button>
@@ -165,6 +217,15 @@ export default function MovieDetail({ params }: { params: { id: string } }) {
                           <span>ENCRYPTION_LAYER</span>
                           <span className="text-green-400 font-bold flex items-center gap-2">
                             <span className="w-2 h-2 bg-green-500 animate-pulse rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]" /> AES-256 ACTIVE
+                          </span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-black tracking-[0.2em] text-gray-500 border-b border-white/5 pb-3">
+                          <span>ADBLOCK_SHIELD</span>
+                          <span className={`font-bold flex items-center gap-2 ${adBlockMode === 'strict' ? 'text-green-400' : adBlockMode === 'relaxed' ? 'text-yellow-400' : 'text-red-400'}`}>
+                            {adBlockMode === 'strict' && <ShieldCheck className="w-3 h-3" />}
+                            {adBlockMode === 'relaxed' && <ShieldAlert className="w-3 h-3" />}
+                            {adBlockMode === 'off' && <ShieldX className="w-3 h-3" />}
+                            {adBlockMode.toUpperCase()}
                           </span>
                       </div>
                       <div className="flex justify-between items-center text-[10px] font-black tracking-[0.2em] text-gray-500 border-b border-white/5 pb-3">
