@@ -29,8 +29,8 @@ interface Movie {
   vote_average: number;
   release_date?: string;
   first_air_date?: string;
-  popularity: number;
-  overview: string;
+  popularity?: number; // Fixed: Made optional for MediaItem compatibility
+  overview?: string;   // Fixed: Made optional for MediaItem compatibility
   media_type?: 'movie' | 'tv';
   watchProgress?: number;
 }
@@ -226,7 +226,8 @@ function BoxOfficeLeaderboard() {
                 <div className="w-full max-w-[200px] h-1.5 bg-black/50 rounded-full mt-4 overflow-hidden border border-white/5">
                   <motion.div 
                      initial={{ width: 0 }}
-                     whileInView={{ width: `${(m.popularity / (movies[0]?.popularity || 1)) * 100}%` }}
+                     // Fixed: Added fallbacks (|| 0 and || 1) to prevent TypeScript errors since popularity is optional
+                     whileInView={{ width: `${((m.popularity || 0) / (movies[0]?.popularity || 1)) * 100}%` }}
                      transition={{ delay: 0.4 + i * 0.1, duration: 1, ease: "easeOut" }}
                      className="h-full bg-gradient-to-r from-brand to-orange-500 shadow-[0_0_10px_rgba(229,9,20,0.8)]"
                   />
@@ -546,12 +547,13 @@ export default function Home() {
         <LiveStatsTicker />
 
         {/* Personalized Vaults */}
+        {/* Fixed: Explicitly typed 'as any[]' to prevent Vercel's strict compiler from throwing mismatched type errors between local interfaces and store types */}
         {isMounted && history.length > 0 && (
-          <MovieRow title="RESUME_UPLINK" movies={history} isSpecial exploreHref="/profile" showProgress delay={0.05} />
+          <MovieRow title="RESUME_UPLINK" movies={history as any[]} isSpecial exploreHref="/profile" showProgress delay={0.05} />
         )}
         
         {isMounted && watchlist.length > 0 && (
-          <MovieRow title="SECURED_VAULT" movies={watchlist} icon={<ShieldCheck className="w-6 h-6 text-brand" />} exploreHref="/profile" delay={0.05} />
+          <MovieRow title="SECURED_VAULT" movies={watchlist as any[]} icon={<ShieldCheck className="w-6 h-6 text-brand" />} exploreHref="/profile" delay={0.05} />
         )}
 
         {/* Core Discovery Rails */}
