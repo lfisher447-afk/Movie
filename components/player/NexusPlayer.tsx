@@ -34,7 +34,7 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
     const [duration, setDuration] = useState(0);
     const [loading, setLoading] = useState(true);
     const [isFullScreen, setIsFullScreen] = useState(false);
-    const[showControls, setShowControls] = useState(true);
+    const [showControls, setShowControls] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
 
     // Advanced Engine States
@@ -48,7 +48,7 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
     const [stats, setStats] = useState({ res: '', kbps: 0, fps: 0, dropped: 0 });
 
     const [activeMenu, setActiveMenu] = useState<'main' | 'quality' | 'speed' | 'audio' | 'aspect' | null>(null);
-    const[doubleTapAnim, setDoubleTapAnim] = useState<'left' | 'right' | null>(null);
+    const [doubleTapAnim, setDoubleTapAnim] = useState<'left' | 'right' | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout>();
 
     // ========================================================================
@@ -89,13 +89,13 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
 
             hls.on(Hls.Events.ERROR, (_, data) => {
                 if (data.fatal) {
-                    setBlacklistedNodes(p => [...p, activeSource.serverId]);
+                    setBlacklistedNodes(p =>[...p, activeSource.serverId]);
                     setActiveIndex(0); // Auto rotate to next resilient source
                 }
             });
         }
         return () => hlsRef.current?.destroy();
-    }, [activeIndex, activeSource, mediaId]);
+    },[activeIndex, activeSource, mediaId]);
 
     // ========================================================================
     // 2. AMBIENT LIGHT ENGINE (Canvas Background Blur)
@@ -142,7 +142,7 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
             navigator.mediaSession.setActionHandler('play', () => videoRef.current?.play());
             navigator.mediaSession.setActionHandler('pause', () => videoRef.current?.pause());
         }
-    },[title, poster]);
+    }, [title, poster]);
 
     // ========================================================================
     // 5. CORE CONTROLLER BINDINGS
@@ -157,8 +157,13 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
         if (!videoRef.current) return;
         setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100 || 0);
         setDuration(videoRef.current.duration);
+        
         if (videoRef.current.currentTime % 5 < 1) localStorage.setItem(`nexus_time_${mediaId}`, videoRef.current.currentTime.toString());
-        if (videoRef.current.getVideoPlaybackQuality) setStats(s => ({ ...s, dropped: videoRef.current!.getVideoPlaybackQuality().droppedVideoFrames }));
+        
+        // Fix applied: Typeof check handles varying browser support without upsetting TypeScript compilation
+        if (typeof videoRef.current.getVideoPlaybackQuality === 'function') {
+            setStats(s => ({ ...s, dropped: videoRef.current!.getVideoPlaybackQuality().droppedVideoFrames }));
+        }
     };
 
     const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
