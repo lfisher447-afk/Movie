@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import useSWR from 'swr';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
@@ -15,8 +15,8 @@ import { NexusPlayer } from '@/components/player/NexusPlayer';
 export default function MediaDetail({ params, searchParams }: { params: { id: string }, searchParams: { type?: string, room?: string } }) {
   const isMounted = useMounted();
   const[cinema, setCinema] = useState(!!searchParams.room);
-  const [playerMode, setPlayerMode] = useState<'native' | 'relay'>('native');
-  const [currentNode, setCurrentNode] = useState(0);
+  const[playerMode, setPlayerMode] = useState<'native' | 'relay'>('native');
+  const[currentNode, setCurrentNode] = useState(0);
   const [roomCode, setRoomCode] = useState<string | null>(searchParams.room || null);
   
   const type = searchParams.type === 'tv' ? 'tv' : 'movie';
@@ -47,6 +47,19 @@ export default function MediaDetail({ params, searchParams }: { params: { id: st
       } 
   }, [media, type, addToHistory]);
 
+  const nativeSources = useMemo(() => {
+      if (streamData?.streamUrl) {
+          return[{
+              serverId: streamData.server || 'NEXUS_NATIVE',
+              name: streamData.server || 'Direct Stream',
+              url: streamData.streamUrl,
+              isDirect: true,
+              tier: 1
+          }];
+      }
+      return[];
+  }, [streamData]);
+
   if (!isMounted || !media) return <div className="h-screen bg-surface flex items-center justify-center"><Activity className="animate-spin text-brand w-16 h-16" /></div>;
 
   const isSaved = watchlist.some((m: any) => m.id === media.id);
@@ -62,7 +75,7 @@ export default function MediaDetail({ params, searchParams }: { params: { id: st
   return (
     <div className={`min-h-screen transition-all duration-[1200ms] ease-out ${cinema ? 'bg-black' : 'bg-transparent'}`}>
       <div className={`absolute top-0 w-full h-[120vh] -z-10 transition-opacity duration-[1500ms] ${cinema ? 'opacity-0' : 'opacity-40'}`}>
-        <Image src={`https://image.tmdb.org/t/p/original${media.backdrop_path}`} alt="Backdrop" fill priority className="object-cover blur-[100px] scale-110" />
+        <Image unoptimized src={`https://image.tmdb.org/t/p/original${media.backdrop_path}`} alt="Backdrop" fill priority className="object-cover blur-[100px] scale-110" />
       </div>
 
       <div className={`max-w-[1800px] mx-auto px-6 ${cinema ? 'py-6 h-screen flex flex-col' : 'pt-32 pb-40'}`}>
@@ -72,7 +85,7 @@ export default function MediaDetail({ params, searchParams }: { params: { id: st
             {cinema ? (
                 <div className="flex-1 flex flex-col relative w-full shadow-2xl rounded-[2rem] border border-white/5 overflow-hidden group/player bg-[#0a0a0f]">
                     {playerMode === 'native' ? (
-                        streamData?.streamUrl ? <NexusPlayer streamUrl={streamData.streamUrl} poster={`https://image.tmdb.org/t/p/w1280${media.backdrop_path}`} /> : <div className="w-full h-full flex items-center justify-center text-brand"><Activity className="w-10 h-10 animate-spin" /></div>
+                        streamData?.streamUrl ? <NexusPlayer sources={nativeSources} mediaId={params.id} title={media.title || media.name} poster={`https://image.tmdb.org/t/p/w1280${media.backdrop_path}`} /> : <div className="w-full h-full flex items-center justify-center text-brand"><Activity className="w-10 h-10 animate-spin" /></div>
                     ) : (
                         <iframe ref={videoRef} src={streams?.sources?.[currentNode]?.url} className="w-full h-full absolute inset-0 bg-black" allowFullScreen />
                     )}
@@ -81,12 +94,11 @@ export default function MediaDetail({ params, searchParams }: { params: { id: st
                 </div>
             ) : (
                 <div className="w-full aspect-video rounded-[2rem] overflow-hidden relative cursor-pointer group" onClick={() => setCinema(true)}>
-                    <Image src={`https://image.tmdb.org/t/p/original${media.backdrop_path}`} alt="Backdrop" fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <Image unoptimized src={`https://image.tmdb.org/t/p/original${media.backdrop_path}`} alt="Backdrop" fill className="object-cover group-hover:scale-105 transition-transform duration-700" />
                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors flex items-center justify-center"><div className="w-24 h-24 bg-brand/90 text-white rounded-full flex items-center justify-center pl-2 shadow-[0_0_50px_rgba(229,9,20,0.8)]"><PlayCircle className="w-10 h-10 fill-current" /></div></div>
                 </div>
             )}
             
-            {/* Display Player Configuration Source Switcher when Cinema executes */}
             <div className={`flex flex-col gap-4 glass-panel p-6 rounded-3xl w-full border-brand/5 shadow-2xl transition-all ${cinema ? 'mt-4 border-white/10 bg-white/5' : 'animate-reveal'}`}>
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between w-full border-b border-white/10 pb-4 gap-4">
                       <div className="flex items-center gap-3 bg-black/40 p-1.5 rounded-2xl border border-white/10">
