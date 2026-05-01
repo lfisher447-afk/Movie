@@ -4,8 +4,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import { 
     Play, Pause, Volume2, VolumeX, Maximize, Minimize, Settings, Activity, 
-    PictureInPicture, FastForward, Rewind, Info, AudioLines, MonitorDot, 
-    MonitorPlay, Speaker, Subtitles, Ratio, Lock, Unlock, Zap
+    PictureInPicture, FastForward, Rewind, MonitorDot, 
+    Speaker, Lock, Unlock, Zap
 } from 'lucide-react';
 
 interface StreamSource { serverId: string; name: string; url: string; isDirect: boolean; tier: number; }
@@ -22,33 +22,33 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
     const gainNodeRef = useRef<GainNode | null>(null);
 
     // Source State
-    const [blacklistedNodes, setBlacklistedNodes] = useState<string[]>([]);
+    const[blacklistedNodes, setBlacklistedNodes] = useState<string[]>([]);
     const availableSources = sources.filter(s => !blacklistedNodes.includes(s.serverId));
     const [activeIndex, setActiveIndex] = useState(0);
     const activeSource = availableSources[activeIndex];
 
     // Playback States
-    const [isPlaying, setIsPlaying] = useState(false);
+    const[isPlaying, setIsPlaying] = useState(false);
     const [volume, setVolume] = useState(1);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [isFullScreen, setIsFullScreen] = useState(false);
+    const[isFullScreen, setIsFullScreen] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const [isLocked, setIsLocked] = useState(false);
 
     // Advanced Engine States
-    const [ambientMode, setAmbientMode] = useState(true);
-    const[audioBoost, setAudioBoost] = useState(false); // 200% Volume
-    const[objectFit, setObjectFit] = useState<'contain' | 'cover' | 'fill'>('contain');
-    const[playbackRate, setPlaybackRate] = useState(1);
+    const[ambientMode, setAmbientMode] = useState(true);
+    const [audioBoost, setAudioBoost] = useState(false); // 200% Volume
+    const [objectFit, setObjectFit] = useState<'contain' | 'cover' | 'fill'>('contain');
+    const [playbackRate, setPlaybackRate] = useState(1);
     const [qualityLevels, setQualityLevels] = useState<{height: number, index: number}[]>([]);
     const [currentQuality, setCurrentQuality] = useState<number | 'auto'>('auto');
     const [audioTracks, setAudioTracks] = useState<any[]>([]);
     const [stats, setStats] = useState({ res: '', kbps: 0, fps: 0, dropped: 0 });
 
     const [activeMenu, setActiveMenu] = useState<'main' | 'quality' | 'speed' | 'audio' | 'aspect' | null>(null);
-    const [doubleTapAnim, setDoubleTapAnim] = useState<'left' | 'right' | null>(null);
+    const[doubleTapAnim, setDoubleTapAnim] = useState<'left' | 'right' | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout>();
 
     // ========================================================================
@@ -89,13 +89,24 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
 
             hls.on(Hls.Events.ERROR, (_, data) => {
                 if (data.fatal) {
-                    setBlacklistedNodes(p =>[...p, activeSource.serverId]);
-                    setActiveIndex(0); // Auto rotate to next resilient source
+                    setBlacklistedNodes(p => [...p, activeSource.serverId]);
+                    setActiveIndex(prev => prev < availableSources.length - 1 ? prev + 1 : 0);
                 }
+            });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Safari / iOS Native HLS Fallback support 
+            video.src = activeSource.url;
+            video.addEventListener('loadedmetadata', () => {
+                setLoading(false);
+                if (defaultTime > 0) video.currentTime = defaultTime;
+            });
+            video.addEventListener('error', () => {
+                setBlacklistedNodes(p => [...p, activeSource.serverId]);
+                setActiveIndex(prev => prev < availableSources.length - 1 ? prev + 1 : 0);
             });
         }
         return () => hlsRef.current?.destroy();
-    },[activeIndex, activeSource, mediaId]);
+    },[activeIndex, activeSource, mediaId, availableSources.length]);
 
     // ========================================================================
     // 2. AMBIENT LIGHT ENGINE (Canvas Background Blur)
@@ -118,17 +129,23 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
     // ========================================================================
     const initAudioBoost = () => {
         if (!videoRef.current || audioCtxRef.current) return;
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        audioCtxRef.current = new AudioContext();
-        const source = audioCtxRef.current.createMediaElementSource(videoRef.current);
-        gainNodeRef.current = audioCtxRef.current.createGain();
-        source.connect(gainNodeRef.current);
-        gainNodeRef.current.connect(audioCtxRef.current.destination);
+        try {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            if (AudioContextClass) {
+                audioCtxRef.current = new AudioContextClass();
+                const source = audioCtxRef.current.createMediaElementSource(videoRef.current);
+                gainNodeRef.current = audioCtxRef.current.createGain();
+                source.connect(gainNodeRef.current);
+                gainNodeRef.current.connect(audioCtxRef.current.destination);
+            }
+        } catch (e) {
+            console.warn("Audio Context Failed to Init", e);
+        }
     };
 
     useEffect(() => {
         if (gainNodeRef.current) gainNodeRef.current.gain.value = audioBoost ? 2.5 : 1.0;
-    }, [audioBoost]);
+    },[audioBoost]);
 
     // ========================================================================
     // 4. MEDIASESSION API (OS Integrations)
@@ -151,18 +168,24 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
         if (!videoRef.current) return;
         initAudioBoost();
         isPlaying ? videoRef.current.pause() : videoRef.current.play();
-    }, [isPlaying]);
+    },[isPlaying]);
 
     const handleProgress = () => {
         if (!videoRef.current) return;
         setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100 || 0);
         setDuration(videoRef.current.duration);
         
-        if (videoRef.current.currentTime % 5 < 1) localStorage.setItem(`nexus_time_${mediaId}`, videoRef.current.currentTime.toString());
-        
-        // Fix applied: Typeof check handles varying browser support without upsetting TypeScript compilation
-        if (typeof videoRef.current.getVideoPlaybackQuality === 'function') {
-            setStats(s => ({ ...s, dropped: videoRef.current!.getVideoPlaybackQuality().droppedVideoFrames }));
+        if (videoRef.current.currentTime % 5 < 1) {
+            localStorage.setItem(`nexus_time_${mediaId}`, videoRef.current.currentTime.toString());
+        }
+
+        // COMPILER FIX: Used soft-try bypassing strict strict property assertions 
+        // to prevent Next.js Type compiler breaks on HTMLVideoElement
+        try {
+            const quality = videoRef.current.getVideoPlaybackQuality();
+            if (quality) setStats(s => ({ ...s, dropped: quality.droppedVideoFrames }));
+        } catch (error) {
+            // Silently ignores on legacy browsers lacking WebKit VideoPlayback support
         }
     };
 
@@ -181,11 +204,15 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
 
     const toggleFullScreen = async () => {
         if (!containerRef.current) return;
-        if (!document.fullscreenElement) {
-            await containerRef.current.requestFullscreen(); setIsFullScreen(true);
-        } else {
-            await document.exitFullscreen(); setIsFullScreen(false);
-        }
+        try {
+            if (!document.fullscreenElement) {
+                await containerRef.current.requestFullscreen(); 
+                setIsFullScreen(true);
+            } else {
+                await document.exitFullscreen(); 
+                setIsFullScreen(false);
+            }
+        } catch (e) { console.error(e); }
     };
 
     const handleMouseMove = () => {
@@ -284,7 +311,7 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
                                         className="w-0 opacity-0 group-hover/vol:w-24 group-hover/vol:opacity-100 transition-all cursor-pointer h-1.5 bg-white/30 backdrop-blur rounded-lg accent-indigo-500 appearance-none" />
                                 </div>
 
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full border border-white/5 backdrop-blur font-mono text-[10px] uppercase">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full border border-white/5 backdrop-blur font-mono text-[10px] uppercase hidden sm:flex">
                                     <MonitorDot className="w-3 h-3 text-indigo-400 animate-pulse" /> {activeSource.name}
                                 </div>
                             </div>
@@ -347,7 +374,7 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
                                                 <button key={s} onClick={() => { setPlaybackRate(s); if(videoRef.current) videoRef.current.playbackRate = s; setActiveMenu(null); }} className={`px-3 py-2 rounded-xl text-left ${playbackRate === s ? 'bg-indigo-500/20 text-indigo-400' : 'hover:bg-white/10'}`}>{s}x Multiplier</button>
                                             ))}
 
-                                            {activeMenu === 'aspect' && ['contain','cover','fill'].map(fit => (
+                                            {activeMenu === 'aspect' &&['contain','cover','fill'].map(fit => (
                                                 <button key={fit} onClick={() => { setObjectFit(fit as any); setActiveMenu(null); }} className={`px-3 py-2 rounded-xl text-left capitalize ${objectFit === fit ? 'bg-indigo-500/20 text-indigo-400' : 'hover:bg-white/10'}`}>{fit} Mode</button>
                                             ))}
                                         </div>
@@ -356,7 +383,7 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
 
                                 {/* External Tools */}
                                 <button onClick={() => { setIsLocked(true); setShowControls(false); }} title="Lock UI" className="hover:text-indigo-400 p-2 rounded-full hover:bg-white/10 transition"><Unlock className="w-4 h-4"/></button>
-                                <button onClick={async () => { if(videoRef.current) document.pictureInPictureElement ? await document.exitPictureInPicture() : await videoRef.current.requestPictureInPicture() }} className="hover:text-indigo-400 p-2 rounded-full hover:bg-white/10 transition"><PictureInPicture className="w-5 h-5"/></button>
+                                <button onClick={async () => { if(videoRef.current) document.pictureInPictureElement ? await document.exitPictureInPicture() : await videoRef.current.requestPictureInPicture() }} className="hover:text-indigo-400 p-2 rounded-full hover:bg-white/10 transition hidden md:block"><PictureInPicture className="w-5 h-5"/></button>
                                 <button onClick={toggleFullScreen} className="bg-white/10 p-2.5 rounded-2xl backdrop-blur hover:bg-white/20 transition hover:scale-105 active:scale-95">{isFullScreen ? <Minimize className="w-5 h-5"/> : <Maximize className="w-5 h-5"/>}</button>
                             </div>
                         </div>
