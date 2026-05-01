@@ -179,13 +179,15 @@ export function NexusPlayer({ sources, poster, mediaId, title = "Unknown Title" 
             localStorage.setItem(`nexus_time_${mediaId}`, videoRef.current.currentTime.toString());
         }
 
-        // COMPILER FIX: Used soft-try bypassing strict strict property assertions 
-        // to prevent Next.js Type compiler breaks on HTMLVideoElement
-        try {
-            const quality = videoRef.current.getVideoPlaybackQuality();
+        // COMPILER FIX: Cast to any to bypass strict type assertions on non-standard
+        // getVideoPlaybackQuality (not in HTMLVideoElement TS types) while still
+        // guarding against browsers that lack WebKit VideoPlayback support.
+        const videoEl = videoRef.current as HTMLVideoElement & {
+            getVideoPlaybackQuality?: () => { droppedVideoFrames: number };
+        };
+        if (typeof videoEl.getVideoPlaybackQuality === 'function') {
+            const quality = videoEl.getVideoPlaybackQuality();
             if (quality) setStats(s => ({ ...s, dropped: quality.droppedVideoFrames }));
-        } catch (error) {
-            // Silently ignores on legacy browsers lacking WebKit VideoPlayback support
         }
     };
 
